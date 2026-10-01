@@ -64,7 +64,9 @@ namespace Momentum.Levels
             if (broken || !breakOnPlayerImpact) return;
             var movement = collision.collider.GetComponentInParent<PlayerMovement>();
             if (movement == null) return;
-            float speed = movement.PreviousVelocity.magnitude;
+            // Only the speed *into* the surface counts (running along glass does not break it).
+            Vector3 normal = collision.contactCount > 0 ? collision.GetContact(0).normal : -movement.PreviousVelocity.normalized;
+            float speed = Mathf.Abs(Vector3.Dot(movement.PreviousVelocity, normal));
             if (speed < impactSpeedThreshold) return;
             Break(movement.PreviousVelocity * 0.4f);
             movement.RestorePreviousVelocity(0.92f);
