@@ -21,6 +21,7 @@ namespace Momentum.EditorTools
 
         public static MaterialLibrary Generate(MaterialLibrary library)
         {
+            EditorUtil.Require(library, "MaterialLibrary");
             EditorUtil.EnsureFolder(GamePaths.Materials);
             EditorUtil.EnsureFolder(GamePaths.Textures);
             GenerateTextures();

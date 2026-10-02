@@ -19,6 +19,8 @@ namespace Momentum.EditorTools
 
         public static GameObject Generate(PrefabRegistry registry, MaterialLibrary lib, MovementSettings movementSettings, CameraFeelSettings cameraSettings)
         {
+            EditorUtil.Require(registry, "PrefabRegistry");
+            EditorUtil.Require(lib, "MaterialLibrary");
             EditorUtil.EnsureFolder(GamePaths.PlayerPrefabs);
             var frictionless = FrictionlessMaterial();
 

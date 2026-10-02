@@ -26,48 +26,53 @@ namespace Momentum.EditorTools
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
             var started = DateTime.Now;
+            string step = "";
             try
             {
-                Step("Configuring project settings", 0.02f);
+                step = Step("Configuring project settings", 0.02f);
                 ProjectConfigurator.CreateFolders();
                 ProjectConfigurator.ConfigureTagsAndLayers();
                 ProjectConfigurator.ConfigurePhysics();
                 ProjectConfigurator.ConfigureInput();
 
-                Step("Creating ScriptableObjects", 0.06f);
+                step = Step("Creating ScriptableObjects", 0.06f);
                 var assets = ScriptableObjectGenerator.CreateCoreAssets();
                 ProjectConfigurator.ConfigurePlayerSettings(assets.config);
 
-                // Prefabs are assembled in a throwaway scene.
+                // Prefabs are assembled in a throwaway scene. Opening a scene (and switching the color space)
+                // lets Unity unload assets nothing in the scene references, so the asset references are
+                // loaded again afterwards instead of reusing the old (possibly unloaded) objects.
+                step = Step("Preparing a temporary scene", 0.08f);
                 SceneGenerator.NewScene();
+                assets = ScriptableObjectGenerator.CreateCoreAssets();
 
-                Step("Generating materials and textures", 0.1f);
+                step = Step("Generating materials and textures", 0.1f);
                 MaterialGenerator.Generate(assets.materials);
                 EditorUtility.SetDirty(assets.materials);
 
-                Step("Generating meshes", 0.14f);
+                step = Step("Generating meshes", 0.14f);
                 MeshAssetGenerator.Generate();
 
-                Step("Generating effects and projectiles", 0.18f);
+                step = Step("Generating effects and projectiles", 0.18f);
                 EffectPrefabGenerator.Generate(assets.prefabs, assets.materials);
 
-                Step("Generating weapons", 0.24f);
+                step = Step("Generating weapons", 0.24f);
                 WeaponPrefabGenerator.Generate(assets.prefabs, assets.materials);
                 assets.prefabs.InvalidateCaches();
 
-                Step("Generating level objects and pickups", 0.3f);
+                step = Step("Generating level objects and pickups", 0.3f);
                 EnvironmentPrefabGenerator.Generate(assets.prefabs, assets.materials);
 
-                Step("Generating enemies", 0.36f);
+                step = Step("Generating enemies", 0.36f);
                 EnemyPrefabGenerator.Generate(assets.prefabs, assets.materials);
 
-                Step("Generating bosses", 0.42f);
+                step = Step("Generating bosses", 0.42f);
                 BossPrefabGenerator.Generate(assets.prefabs, assets.materials);
 
-                Step("Generating the player", 0.48f);
+                step = Step("Generating the player", 0.48f);
                 PlayerPrefabGenerator.Generate(assets.prefabs, assets.materials, assets.movement, assets.camera);
 
-                Step("Generating UI", 0.52f);
+                step = Step("Generating UI", 0.52f);
                 UIGenerator.Generate(assets.prefabs);
 
                 assets.prefabs.InvalidateCaches();
@@ -75,18 +80,18 @@ namespace Momentum.EditorTools
                 AssetDatabase.SaveAssets();
                 GameConfig.ClearCache();
 
-                Step("Creating level definitions", 0.56f);
-                var definitions = ScriptableObjectGenerator.CreateLevelDefinitions(assets.levels);
+                step = Step("Creating level definitions", 0.56f);
+                ScriptableObjectGenerator.CreateLevelDefinitions(assets.levels);
 
-                Step("Building menu, editor and custom level scenes", 0.6f);
+                step = Step("Building menu, editor and custom level scenes", 0.6f);
                 SceneGenerator.GenerateMainMenu();
                 SceneGenerator.GenerateLevelEditor();
                 SceneGenerator.GenerateCustomLevel();
 
-                Step("Building campaign levels", 0.65f);
-                DemoLevelGenerator.Generate(assets, definitions);
+                step = Step("Building campaign levels", 0.65f);
+                DemoLevelGenerator.Generate();
 
-                Step("Writing Build Settings", 0.97f);
+                step = Step("Writing Build Settings", 0.97f);
                 SceneGenerator.WriteBuildSettings();
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
@@ -94,8 +99,11 @@ namespace Momentum.EditorTools
             catch (Exception e)
             {
                 EditorUtility.ClearProgressBar();
+                Debug.LogError($"[Momentum Setup] Setup failed during step '{step}': {e.GetType().Name}: {e.Message}\n{e.StackTrace}");
                 Debug.LogException(e);
-                EditorUtility.DisplayDialog("MOMENTUM Setup", "Setup failed: " + e.Message + "\n\nSee the Console for details.", "OK");
+                EditorUtility.DisplayDialog("MOMENTUM Setup",
+                    "Setup failed during: " + step + "\n\n" + e.GetType().Name + ": " + e.Message + "\n\n" + FirstFrame(e) +
+                    "\n\nSee the Console for the full stack trace. Running the setup again is safe.", "OK");
                 return;
             }
             finally
@@ -127,16 +135,17 @@ namespace Momentum.EditorTools
             try
             {
                 var assets = ScriptableObjectGenerator.CreateCoreAssets();
-                var definitions = ScriptableObjectGenerator.CreateLevelDefinitions(assets.levels);
+                ScriptableObjectGenerator.CreateLevelDefinitions(assets.levels);
                 SceneGenerator.GenerateMainMenu();
-                DemoLevelGenerator.Generate(assets, definitions);
+                DemoLevelGenerator.Generate();
                 SceneGenerator.WriteBuildSettings();
                 AssetDatabase.SaveAssets();
             }
             catch (Exception e)
             {
+                EditorUtility.ClearProgressBar();
                 Debug.LogException(e);
-                EditorUtility.DisplayDialog("MOMENTUM", "Rebuilding levels failed: " + e.Message, "OK");
+                EditorUtility.DisplayDialog("MOMENTUM", "Rebuilding levels failed: " + e.GetType().Name + ": " + e.Message + "\n\n" + FirstFrame(e), "OK");
                 return;
             }
             finally
@@ -190,9 +199,22 @@ namespace Momentum.EditorTools
             EditorUtility.RevealInFinder(SaveManager.SaveDirectory);
         }
 
-        static void Step(string message, float progress)
+        static string Step(string message, float progress)
         {
             EditorUtility.DisplayProgressBar("MOMENTUM Setup", message, progress);
+            Debug.Log("[Momentum Setup] " + message + "...");
+            return message;
+        }
+
+        /// <summary>First stack frame inside the project's code, so the dialog says where it failed.</summary>
+        static string FirstFrame(Exception e)
+        {
+            if (string.IsNullOrEmpty(e.StackTrace)) return "";
+            foreach (var line in e.StackTrace.Split('\n'))
+            {
+                if (line.Contains("Momentum.")) return "At: " + line.Trim();
+            }
+            return "At: " + e.StackTrace.Split('\n')[0].Trim();
         }
     }
 }

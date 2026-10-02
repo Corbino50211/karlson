@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using Momentum.Levels;
 using UnityEditor;
@@ -12,7 +11,11 @@ namespace Momentum.EditorTools
     /// </summary>
     public static class DemoLevelGenerator
     {
-        public static void Generate(ScriptableObjectGenerator.Assets assets, List<LevelDefinition> definitions)
+        /// <summary>
+        /// Builds every campaign scene. Assets are looked up again for each scene (through GameConfig) because
+        /// opening a scene can unload assets that are only referenced from editor code.
+        /// </summary>
+        public static void Generate()
         {
             EditorUtil.EnsureFolder(GamePaths.LevelScenes);
             EditorUtil.EnsureFolder(GamePaths.CampaignJson);
@@ -23,8 +26,7 @@ namespace Momentum.EditorTools
                 EditorUtility.DisplayProgressBar("MOMENTUM Setup", "Building level " + entry.number + ": " + entry.name, index / (float)CampaignLevels.All.Length);
                 var data = entry.build();
                 ExportJson(entry, data);
-                var definition = definitions.Find(d => d != null && d.id == entry.id);
-                SceneGenerator.GenerateCampaignScene(entry, data, definition, assets.prefabs);
+                SceneGenerator.GenerateCampaignScene(entry, data);
                 Debug.Log($"[Momentum Setup] Built {entry.scene} ({data.objects.Count} objects).");
             }
             EditorUtility.ClearProgressBar();

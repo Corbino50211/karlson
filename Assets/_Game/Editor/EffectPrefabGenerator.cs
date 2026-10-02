@@ -35,6 +35,8 @@ namespace Momentum.EditorTools
 
         public static void Generate(PrefabRegistry registry, MaterialLibrary library)
         {
+            EditorUtil.Require(registry, "PrefabRegistry");
+            EditorUtil.Require(library, "MaterialLibrary");
             lib = library;
             EditorUtil.EnsureFolder(GamePaths.EffectPrefabs);
             EditorUtil.EnsureFolder(GamePaths.ProjectilePrefabs);

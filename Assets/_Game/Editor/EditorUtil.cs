@@ -71,6 +71,16 @@ namespace Momentum.EditorTools
             return AssetDatabase.LoadAssetAtPath<GameObject>(path);
         }
 
+        /// <summary>Throws a clear error when a required asset is missing or was unloaded by Unity.</summary>
+        public static T Require<T>(T asset, string description) where T : Object
+        {
+            if (asset == null)
+            {
+                throw new System.InvalidOperationException(description + " is missing or was unloaded. Run Tools > Parkour FPS > Setup Complete Game again.");
+            }
+            return asset;
+        }
+
         // ------------------------------------------------------------------ Builtin meshes
 
         static Mesh Primitive(PrimitiveType type, ref Mesh cache)

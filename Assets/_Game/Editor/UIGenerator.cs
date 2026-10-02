@@ -13,6 +13,7 @@ namespace Momentum.EditorTools
     {
         public static void Generate(PrefabRegistry registry)
         {
+            EditorUtil.Require(registry, "PrefabRegistry");
             EditorUtil.EnsureFolder(GamePaths.UIPrefabs);
             registry.hud = Save(HUDView.Build(null).gameObject, "HUD");
             registry.pauseMenu = Save(PauseMenuView.Build(null).gameObject, "PauseMenu");

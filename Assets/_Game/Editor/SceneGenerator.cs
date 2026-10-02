@@ -242,9 +242,15 @@ namespace Momentum.EditorTools
 
         // ------------------------------------------------------------------ Campaign scene
 
-        public static void GenerateCampaignScene(CampaignLevels.Entry entry, LevelData data, LevelDefinition definition, PrefabRegistry registry)
+        public static void GenerateCampaignScene(CampaignLevels.Entry entry, LevelData data)
         {
             var scene = NewScene();
+            // Resolve assets after the scene switch (it may have unloaded previously loaded objects).
+            var config = GameConfig.Instance;
+            var registry = config.prefabRegistry;
+            if (registry == null) throw new System.InvalidOperationException("GameConfig has no PrefabRegistry. Run Tools > Parkour FPS > Setup Complete Game.");
+            var definition = config.levelRegistry != null ? config.levelRegistry.FindById(entry.id) : null;
+            if (definition == null) Debug.LogWarning($"[Momentum Setup] No LevelDefinition with id '{entry.id}' for {entry.scene}.");
             var sun = CreateSun();
             ApplyEnvironment(data.environment, sun);
 

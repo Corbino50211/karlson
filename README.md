@@ -406,6 +406,7 @@ Level design reference (default movement settings): run 11 m/s, sprint 14 m/s, j
 | Problem | Fix |
 |---|---|
 | Main menu is empty / "No player prefab registered" / pink materials | Run `Tools > Parkour FPS > Setup Complete Game`. |
+| "Setup failed during: ..." dialog | The dialog names the step and the line that failed; the full stack trace is in the Console. Running the setup again is safe (finished assets are reused). If it keeps failing at the same step, copy the red Console error into an issue. |
 | `Tools > Parkour FPS` menu is missing | The scripts have not compiled. Check the Console for errors (usually from a wrong Unity version or a modified script) and fix them; the menu appears after a successful compile. |
 | Compile errors right after opening | Make sure you opened the project with **Unity 2022.3**. Let the import finish, then use *Assets > Reimport All* if Unity was interrupted. |
 | Layer warnings ("Layer 8 was ... renaming") | The setup renames layers 8-18. If you already used those layers for something else, move your objects to other layers first. |

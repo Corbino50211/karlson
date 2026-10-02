@@ -92,6 +92,8 @@ namespace Momentum.EditorTools
 
         public static List<WeaponDefinition> Generate(PrefabRegistry registry, MaterialLibrary library)
         {
+            EditorUtil.Require(registry, "PrefabRegistry");
+            EditorUtil.Require(library, "MaterialLibrary");
             lib = library;
             EditorUtil.EnsureFolder(GamePaths.WeaponDefinitions);
             EditorUtil.EnsureFolder(GamePaths.WeaponPrefabs);
